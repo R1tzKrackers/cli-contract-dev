@@ -1,0 +1,172 @@
+# CLI Contract Framework Manifest
+# This file defines the framework metadata, variables, and phases
+
+meta:
+  id: cli-contract-dev
+  name: CLI Contract Framework
+  version: 1.0.0
+  description: CLI開発フレームワーク。コマンド設計→実装→ヘルプ生成の流れ
+
+# Variable mapping (project-config.yml paths)
+variables:
+  PROJECT_NAME: project.name
+  PROJECT_TYPE: project.type
+  DESIGN_ROLE: roles.design
+  IMPL_ROLE: roles.impl
+  SETUP_ROLE: roles.setup
+  SPEC_DIR: directories.cli_spec
+  CLI_SPEC_DIR: directories.cli_spec
+  IMPL_DIR: directories.impl
+  TEST_DIR: directories.test
+
+# Phase definitions
+phases:
+  # Setup
+  - id: 00c-project-config
+    name: プロジェクト設定
+    description: project-config.yml のカスタマイズ
+    tool: Claude
+    group: setup
+    prompt: prompts/00c-project-config.md
+    next: [01-cmd-design]
+    reject: []
+
+  # Design - Command
+  - id: 01-cmd-design
+    name: コマンド設計
+    description: コマンド体系・オプション設計
+    tool: Claude
+    group: design
+    prompt: prompts/01-cmd-design.md
+    next: [01r-cmd-review]
+    reject: []
+
+  - id: 01r-cmd-review
+    name: コマンド設計レビュー
+    description: コマンド設計の人間レビュー
+    tool: 人間+AI
+    group: review
+    prompt: prompts/01r-cmd-review.md
+    next: [02-cmd-verify]
+    reject: [01-cmd-design]
+
+  - id: 02-cmd-verify
+    name: コマンド検証
+    description: コマンド設計の整合性検証
+    tool: Claude
+    group: design
+    prompt: prompts/02-cmd-verify.md
+    next: [02r-cmd-verify-review]
+    reject: [01-cmd-design, 03-cmd-fix]
+
+  - id: 02r-cmd-verify-review
+    name: コマンド検証レビュー
+    description: コマンド検証結果の人間レビュー
+    tool: 人間+AI
+    group: review
+    prompt: prompts/02r-cmd-verify-review.md
+    next: [04-detail-design]
+    reject: [03-cmd-fix, 01-cmd-design]
+
+  - id: 03-cmd-fix
+    name: コマンド修正
+    description: コマンド設計の修正
+    tool: Claude
+    group: design
+    optional: true
+    prompt: prompts/03-cmd-fix.md
+    next: [02-cmd-verify]
+    reject: []
+
+  # Design - Detail
+  - id: 04-detail-design
+    name: 詳細設計
+    description: サブコマンド詳細・入出力仕様設計
+    tool: Claude
+    group: detail
+    prompt: prompts/04-detail-design.md
+    next: [04r-detail-review]
+    reject: [01-cmd-design]
+
+  - id: 04r-detail-review
+    name: 詳細設計レビュー
+    description: 詳細設計の人間レビュー
+    tool: 人間+AI
+    group: review
+    prompt: prompts/04r-detail-review.md
+    next: [05-handoff-check]
+    reject: [04-detail-design]
+
+  # Handoff
+  - id: 05-handoff-check
+    name: 引継ぎ判定
+    description: 実装への引継ぎ判定
+    tool: Claude
+    group: handoff
+    prompt: prompts/05-handoff-check.md
+    next: [06-design-freeze]
+    reject: [04-detail-design]
+
+  - id: 06-design-freeze
+    name: 契約凍結
+    description: コマンド設計の凍結
+    tool: Claude
+    group: freeze
+    prompt: prompts/06-design-freeze.md
+    next: [07-impl-start]
+    reject: [05-handoff-check]
+
+  # Implementation
+  - id: 07-impl-start
+    name: 実装開始
+    description: 実装の開始準備
+    tool: Codex
+    group: impl
+    prompt: prompts/07-impl-start.md
+    next: [08-impl-execute]
+    reject: []
+
+  - id: 08-impl-execute
+    name: 実装
+    description: CLIコマンドの実装
+    tool: Codex
+    group: impl
+    prompt: prompts/08-impl-execute.md
+    next: [09-help-generate]
+    reject: []
+
+  - id: 09-help-generate
+    name: ヘルプ生成
+    description: ヘルプテキスト・マニュアル生成
+    tool: Codex
+    group: impl
+    prompt: prompts/09-help-generate.md
+    next: [10-impl-verify]
+    reject: [08-impl-execute]
+
+  - id: 10-impl-verify
+    name: 実装検証
+    description: 実装の検証
+    tool: Codex
+    group: verify
+    prompt: prompts/10-impl-verify.md
+    next: [10r-impl-verify-review]
+    reject: [08-impl-execute]
+
+  - id: 10r-impl-verify-review
+    name: 実装検証レビュー
+    description: 実装検証結果の人間レビュー
+    tool: 人間+AI
+    group: review
+    prompt: prompts/10r-impl-verify-review.md
+    next: [11-impl-complete]
+    reject: [08-impl-execute]
+
+  - id: 11-impl-complete
+    name: 実装完了
+    description: 実装の完了
+    tool: Codex
+    group: complete
+    prompt: prompts/11-impl-complete.md
+    next: []
+    reject: [10-impl-verify]
